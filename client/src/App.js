@@ -33,6 +33,7 @@ class App extends Component {
                 value={this.state.username}
                 placeholder="Enter summoner name"
                 onChange={this.handleInput}
+                autofocus="true"
               />
             </label>
             <br />
