@@ -26,6 +26,24 @@ require("dotenv").config();
 // Use CORS
 app.use(cors());
 
+function getChampionsNotPlayed(data, completeChampionList) {
+  let notPlayed = [];
+  completeChampionList.forEach(function(champ) {
+    let found = false;
+    data.forEach(function(obj) {
+      if (champ.championId === obj.championId) {
+        found = true;
+      }
+    });
+    if (!found) {
+      notPlayed.push(champ.championName);
+    } else {
+      found = false;
+    }
+  });
+  return notPlayed;
+}
+
 // Filter for champions that haven't earned chests yet
 function chestNotEarned(champion) {
   if (!champion.chestGranted) {
@@ -35,10 +53,10 @@ function chestNotEarned(champion) {
 }
 
 // Get champion names for the chest-less champions.
-function getNameForMatchingIds(chestLessChamps, IdAndName) {
+function getNameForMatchingIds(chestLessChamps, completeChampionList) {
   champNames = [];
   chestLessChamps.forEach(function(champ) {
-    IdAndName.forEach(function(obj) {
+    completeChampionList.forEach(function(obj) {
       if (champ.championId === obj.championId) {
         champNames.push(obj.championName);
       }
@@ -48,14 +66,14 @@ function getNameForMatchingIds(chestLessChamps, IdAndName) {
 }
 
 app.use("/calling", (req, res) => {
-  // Get latest list of champions & associated champion id
+  // Get complete list of champions as an array of {id, name} objects
   const ddragonUrl =
     "http://ddragon.leagueoflegends.com/cdn/8.23.1/data/en_US/champion.json";
-  let IdAndName = [];
+  let completeChampionList = [];
   getJSON(ddragonUrl, function(error, champions) {
     championsArray = Object.values(champions.data);
     championsArray.forEach(function(champ) {
-      IdAndName.push({
+      completeChampionList.push({
         championId: parseInt(champ.key),
         championName: champ.id
       });
@@ -76,9 +94,13 @@ app.use("/calling", (req, res) => {
 
     // Make Riot API call to retrieve champion data
     getJSON(url2, function(error, data) {
+      championsNotPlayed = getChampionsNotPlayed(data, completeChampionList);
       let chestLessChamps = data.filter(chestNotEarned);
       let chestLessChampsArray = Object.values(chestLessChamps);
-      res.send(getNameForMatchingIds(chestLessChampsArray, IdAndName));
+      let result = championsNotPlayed.concat(
+        getNameForMatchingIds(chestLessChampsArray, completeChampionList)
+      );
+      res.send(result.sort());
     });
   });
 });

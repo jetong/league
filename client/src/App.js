@@ -1,31 +1,48 @@
 import React, { Component } from "react";
 import "./App.css";
+import Card from "./components/Card";
 
 class App extends Component {
   state = {
     username: "",
-    id: null
+    champs: null
   };
 
   handleInput = event => {
     this.setState({ username: event.target.value });
   };
 
-  getSummonerId = event => {
+  getSummonerData = event => {
     event.preventDefault();
     const url = `http://localhost:4000/calling?name=${this.state.username}`;
     fetch(url)
       .then(response => response.json())
-      .then(myJson => this.setState({ id: JSON.stringify(myJson) }));
+      .then(myJson => this.setState({ champs: myJson }));
   };
+
+  showCards() {
+    // prevent access to state before it's set
+    if (this.state.champs !== null) {
+      let champs = this.state.champs;
+      let imgUrl =
+        "http://ddragon.leagueoflegends.com/cdn/8.23.1/img/champion/";
+
+      return champs.map(champ => (
+        <Card key={champ} name={champ} imgSrc={`${imgUrl}${champ}.png`} />
+      ));
+    }
+  }
+
+  capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  }
 
   render() {
     return (
       <div className="App">
-        <header className="App-header">
+        <div className="App_main">
           <p>Username: {this.state.username}</p>
-          <p>ID: {this.state.id}</p>
-          <form onSubmit={this.getSummonerId}>
+          <form onSubmit={this.getSummonerData}>
             <label>
               Name:
               <input
@@ -33,14 +50,17 @@ class App extends Component {
                 value={this.state.username}
                 placeholder="Enter summoner name"
                 onChange={this.handleInput}
-                autofocus="true"
+                autoFocus={true}
+                required
               />
             </label>
             <br />
             <br />
             <input type="submit" value="Submit" />
           </form>
-        </header>
+        </div>
+
+        <div className="card_wrapper">{this.showCards()}</div>
       </div>
     );
   }
