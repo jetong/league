@@ -52,16 +52,23 @@ function filterOutChestEarnedChamps(chestEarnedChamps, completeChampionList) {
 }
 
 app.use("/calling", (req, res) => {
-  // Get complete list of champions as an array of {id, name} objects
-  const ddragonUrl =
-    "http://ddragon.leagueoflegends.com/cdn/8.23.1/data/en_US/champion.json";
+  // Get latest version/patch number for RIOT
+  const versionUrl = "https://ddragon.leagueoflegends.com/api/versions.json";
+  let version = "";
   let completeChampionList = [];
-  getJSON(ddragonUrl, function(error, champions) {
-    championsArray = Object.values(champions.data);
-    championsArray.forEach(function(champ) {
-      completeChampionList.push({
-        championId: parseInt(champ.key),
-        championName: champ.id
+
+  getJSON(versionUrl, function(error, versionArray) {
+    version = versionArray[0];
+    // Get complete list of champions as an array of {id, name} objects
+    const ddragonUrl = `http://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/champion.json`;
+
+    getJSON(ddragonUrl, function(error, champions) {
+      championsArray = Object.values(champions.data);
+      championsArray.forEach(function(champ) {
+        completeChampionList.push({
+          championId: parseInt(champ.key),
+          championName: champ.id
+        });
       });
     });
   });
@@ -84,7 +91,7 @@ app.use("/calling", (req, res) => {
         chestEarnedChamps,
         completeChampionList
       );
-      res.send(result.sort());
+      res.send({ result: result.sort(), version: version });
     });
   });
 });
