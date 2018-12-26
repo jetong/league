@@ -2,6 +2,9 @@ import React, { Component } from "react";
 import "./App.css";
 import Card from "./components/Card";
 
+import { scroller } from "react-scroll";
+import { Element } from "react-scroll";
+
 class App extends Component {
   state = {
     username: "",
@@ -37,6 +40,14 @@ class App extends Component {
     return string.charAt(0).toUpperCase() + string.slice(1);
   }
 
+  scrollToElement = element => {
+    scroller.scrollTo(element, {
+      duration: 1500,
+      delay: 100,
+      smooth: true
+    });
+  };
+
   render() {
     return (
       <div className="App">
@@ -56,11 +67,17 @@ class App extends Component {
             </label>
             <br />
             <br />
-            <input type="submit" value="Submit" />
+            <input
+              type="submit"
+              value="Submit"
+              onClick={() => this.scrollToElement("cards")}
+            />
           </form>
         </div>
 
-        <div className="card_wrapper">{this.showCards()}</div>
+        <Element name="cards">
+          <div className="card_wrapper">{this.showCards()}</div>
+        </Element>
       </div>
     );
   }
