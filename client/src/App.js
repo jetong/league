@@ -8,8 +8,8 @@ import { Element } from "react-scroll";
 class App extends Component {
   state = {
     username: "",
-    champs: null,
-    version: null
+    champs: undefined,
+    version: undefined
   };
 
   handleInput = event => {
@@ -18,7 +18,7 @@ class App extends Component {
 
   getSummonerData = event => {
     event.preventDefault();
-    const url = `http://localhost:4000/calling?name=${this.state.username}`;
+    const url = `http://localhost:4000/api?name=${this.state.username}`;
     fetch(url)
       .then(response => response.json())
       .then(myJson =>
@@ -28,7 +28,7 @@ class App extends Component {
 
   showCards() {
     // prevent access to state before it's set
-    if (this.state.champs !== null) {
+    if (this.state.champs !== undefined) {
       let champs = this.state.champs;
       let imgUrl = `http://ddragon.leagueoflegends.com/cdn/${
         this.state.version
@@ -37,6 +37,8 @@ class App extends Component {
       return champs.map(champ => (
         <Card key={champ} name={champ} imgSrc={`${imgUrl}${champ}.png`} />
       ));
+    } else {
+      return;
     }
   }
 

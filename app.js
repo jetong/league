@@ -3,11 +3,8 @@ var express = require("express");
 var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
-const cors = require("cors"); // addition we make
+const cors = require("cors");
 var getJSON = require("get-json");
-
-//var indexRouter = require('./routes/index');
-//var usersRouter = require('./routes/users');
 
 var app = express();
 
@@ -21,13 +18,14 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
+// Access .env variables
 require("dotenv").config();
 
 // Use CORS
 app.use(cors());
 
 // Filter for champions that have earned chests.
-function chestEarned(champion) {
+function hasChestEarned(champion) {
   if (champion.chestGranted) {
     return true;
   }
@@ -35,11 +33,14 @@ function chestEarned(champion) {
 }
 
 // Reduce the completeChampionList to only those champions that haven't earned chests yet.
-function filterOutChestEarnedChamps(chestEarnedChamps, completeChampionList) {
+function filterOutChestEarnedChamps(
+  hasChestEarnedChamps,
+  completeChampionList
+) {
   champNames = [];
   completeChampionList.forEach(function(obj) {
     let match = false;
-    chestEarnedChamps.forEach(function(champ) {
+    hasChestEarnedChamps.forEach(function(champ) {
       if (obj.championId === champ.championId) {
         match = true;
       }
@@ -51,7 +52,7 @@ function filterOutChestEarnedChamps(chestEarnedChamps, completeChampionList) {
   return champNames;
 }
 
-app.use("/calling", (req, res) => {
+app.use("/api", (req, res) => {
   // Get latest version/patch number for RIOT
   const versionUrl = "https://ddragon.leagueoflegends.com/api/versions.json";
   let version = "";
@@ -80,24 +81,26 @@ app.use("/calling", (req, res) => {
 
   // Look up summoner.id by summonerName using RIOT API
   getJSON(url, function(error, summoner) {
-    const url2 = `https://na1.api.riotgames.com/lol/champion-mastery/v3/champion-masteries/by-summoner/${
-      summoner.id
-    }?api_key=${process.env.REACT_APP_API_KEY}`;
+    if (summoner === undefined) {
+      res.send({ champs: undefined, version: undefined });
+    } else {
+      const url2 = `https://na1.api.riotgames.com/lol/champion-mastery/v3/champion-masteries/by-summoner/${
+        summoner.id
+      }?api_key=${process.env.REACT_APP_API_KEY}`;
 
-    // Using summoner.id, retrieve champion data from RIOT and filter for champions that haven't yet earned chests.
-    getJSON(url2, function(error, data) {
-      let chestEarnedChamps = data.filter(chestEarned);
-      let result = filterOutChestEarnedChamps(
-        chestEarnedChamps,
-        completeChampionList
-      );
-      res.send({ result: result.sort(), version: version });
-    });
+      // Using summoner.id, retrieve champion data from RIOT and filter for champions that haven't yet earned chests.
+      getJSON(url2, function(error, data) {
+        let hasChestEarnedChamps = data.filter(hasChestEarned);
+        let result = filterOutChestEarnedChamps(
+          hasChestEarnedChamps,
+          completeChampionList
+        );
+        res.send({ result: result.sort(), version: version });
+      });
+    }
   });
 });
 
-//app.use('/calling', indexRouter);
-//app.use('/users', usersRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
